@@ -1,0 +1,109 @@
+const divider = document.getElementById('divider');
+const cardContainer = document.getElementById('cardContainer');
+const roundInfo = document.getElementById('roundInfo');
+const playerScore = document.getElementById('playerScore');
+const gameResult = document.getElementById('gameResult');
+const resetButton = document.getElementById('resetButton');
+
+let position = 50;
+let currentRound = 1;
+const totalRounds = 5;
+let score = 0;
+
+const cards = [
+    { type: 'populist', effect: 10, description: 'Rally the Working Class', strategy: 'Appeal to economic anxieties', hint: 'Boost support among blue-collar workers' },
+    { type: 'populist', effect: 15, description: 'Attack the Establishment', strategy: 'Highlight corruption and elitism', hint: 'Erode trust in traditional institutions' },
+    { type: 'populist', effect: 12, description: 'Nationalistic Rhetoric', strategy: 'Emphasize national identity and sovereignty', hint: 'Tap into patriotic sentiments' },
+    { type: 'elite', effect: -10, description: 'Media Counterattack', strategy: 'N/A', hint: 'Establishment pushes back through mainstream media' },
+    { type: 'elite', effect: -15, description: 'Economic Fearmongering', strategy: 'N/A', hint: 'Elites warn of economic instability under populism' },
+    { type: 'wildcard', effect: 0, description: '', strategy: 'Adapt your message to the situation', hint: 'Unpredictable event' }
+];
+
+const wildcardEvents = [
+    { description: 'Political Scandal', effectRange: [-20, 20] },
+    { description: 'Economic Crisis', effectRange: [-15, 15] },
+    { description: 'Immigration Surge', effectRange: [-10, 10] },
+    { description: 'Technological Disruption', effectRange: [-10, 10] },
+    { description: 'Global Conflict', effectRange: [-15, 15] }
+];
+
+function shuffleCards() {
+    for (let i = cards.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [cards[i], cards[j]] = [cards[j], cards[i]];
+    }
+    // Set random wildcard event
+    const wildcardIndex = cards.findIndex(card => card.type === 'wildcard');
+    const randomEvent = wildcardEvents[Math.floor(Math.random() * wildcardEvents.length)];
+    cards[wildcardIndex].description = randomEvent.description;
+    cards[wildcardIndex].effect = Math.floor(Math.random() * (randomEvent.effectRange[1] - randomEvent.effectRange[0] + 1)) + randomEvent.effectRange[0];
+}
+
+function createCards() {
+    cardContainer.innerHTML = '';
+    cards.forEach((card, index) => {
+        const cardElement = document.createElement('div');
+        cardElement.className = 'card';
+        cardElement.innerHTML = `
+            <div>${card.description}</div>
+            <div class="card-hint">${card.hint}</div>
+            <div class="card-strategy">${card.strategy}</div>
+        `;
+        cardElement.addEventListener('click', () => playCard(index, cardElement));
+        cardContainer.appendChild(cardElement);
+    });
+}
+
+function playCard(index, cardElement) {
+    if (cardElement.classList.contains('flipped') || currentRound > totalRounds) return;
+
+    const card = cards[index];
+    cardElement.classList.add('flipped');
+    cardElement.innerHTML += `<div>Effect: ${card.effect}</div>`;
+
+    updatePosition(card.effect);
+    updateScore(card.effect);
+    currentRound++;
+
+    if (currentRound <= totalRounds) {
+        roundInfo.textContent = `Round: ${currentRound} / ${totalRounds}`;
+    } else {
+        endGame();
+    }
+}
+
+function updatePosition(effect) {
+    position += effect;
+    position = Math.max(0, Math.min(100, position));
+    divider.style.left = `${position}%`;
+}
+
+function updateScore(effect) {
+    if (effect > 0) {
+        score += effect;
+        playerScore.textContent = `Populist Influence: ${score}`;
+    }
+}
+
+function endGame() {
+    roundInfo.textContent = 'Game Over';
+    if (position > 60) {
+        gameResult.textContent = 'Victory! Your populist message resonated with the median voter.';
+    } else {
+        gameResult.textContent = 'Defeat. The establishment maintained its grip on the median voter.';
+    }
+    gameResult.innerHTML += `<br>Final Score: ${score}`;
+    resetButton.style.display = 'inline-block';
+}
+
+function resetGame() {
+    position = 50;
+    currentRound = 1;
+    score = 0;
+    divider.style.left = '50%';
+    roundInfo.textContent = 'Round: 1 / 5';
+    playerScore.textContent = 'Populist Influence: 0';
+    gameResult.textContent = '';
+    resetButton.style.display = 'none';
+    shuffleCards();
+
